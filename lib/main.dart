@@ -30,6 +30,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  TextEditingController _textFieldController = TextEditingController();
 
   void _incrementCounter() {
     setState(() {
@@ -43,13 +44,52 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _createTodo(BuildContext context) {
+//open dialog with textfield
+    _displayDialog(context);
+// save on submit
+  }
+
+  _displayDialog(BuildContext context) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Add a Todo'),
+            content: TextField(
+              controller: _textFieldController,
+              decoration: InputDecoration(hintText: "Input some text"),
+            ),
+            actions: <Widget>[
+              new FlatButton(
+                child: new Text('CANCEL'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              new FlatButton(
+                child: new Text('SAVE'),
+                onPressed: () {
+                  setState(() {
+                    widget.todos.add(_textFieldController.text);
+                  });
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title), actions: [
         IconButton(
           icon: Icon(Icons.add),
-          onPressed: () {},
+          onPressed: () {
+            _createTodo(context);
+          },
         )
       ]),
       body: ListView.builder(
