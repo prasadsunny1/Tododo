@@ -37,6 +37,12 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void _deleteTodo(int index) {
+    setState(() {
+      widget.todos.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,7 +55,16 @@ class _MyHomePageState extends State<MyHomePage> {
       body: ListView.builder(
         itemCount: widget.todos.length,
         itemBuilder: (context, index) => ListTile(
-          title: Text('a'),
+          // subtitle: Text("Detail"),
+          title: Text(widget.todos[index]),
+          leading: Icon(Icons.fingerprint),
+          trailing: IconButton(
+            icon: Icon(Icons.delete),
+            onPressed: () {
+              //Delete this item
+              _deleteTodo(index);
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
