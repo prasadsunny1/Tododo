@@ -40,17 +40,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _deleteTodo(int index) {
     setState(() {
-      widget.todos.removeAt(index);
+      _displayDeleteWarning(context, index);
     });
   }
 
   void _createTodo(BuildContext context) {
 //open dialog with textfield
-    _displayDialog(context);
+    _displayAddTodoDialog(context);
 // save on submit
   }
 
-  _displayDialog(BuildContext context) async {
+  _displayAddTodoDialog(BuildContext context) async {
     return showDialog(
         context: context,
         builder: (context) {
@@ -72,6 +72,33 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () {
                   setState(() {
                     widget.todos.add(_textFieldController.text);
+                  });
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
+  }
+
+  _displayDeleteWarning(BuildContext context, int deleteIndex) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Confirm deletion'),
+            actions: <Widget>[
+              new FlatButton(
+                child: new Text('CANCEL'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              new FlatButton(
+                child: new Text('DELETE'),
+                onPressed: () {
+                  setState(() {
+                    widget.todos.removeAt(deleteIndex);
                   });
                   Navigator.of(context).pop();
                 },
