@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  final List<String> allTodos = ['todo1', 'todo2'];
+  final List<String> allTodos = ['Pick up milk', 'Call John Wick'];
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Todo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -29,14 +29,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   TextEditingController _textFieldController = TextEditingController();
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   void _deleteTodo(int index) {
     setState(() {
@@ -45,9 +38,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _createTodo(BuildContext context) {
-//open dialog with textfield
     _displayAddTodoDialog(context);
-// save on submit
   }
 
   _displayAddTodoDialog(BuildContext context) async {
@@ -73,6 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   setState(() {
                     widget.todos.add(_textFieldController.text);
                   });
+                  _textFieldController.clear();
                   Navigator.of(context).pop();
                 },
               ),
@@ -111,31 +103,29 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), actions: [
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: () {
-            _createTodo(context);
-          },
-        )
-      ]),
+      appBar: AppBar(title: Text(widget.title), actions: []),
       body: ListView.builder(
         itemCount: widget.todos.length,
-        itemBuilder: (context, index) => ListTile(
-          // subtitle: Text("Detail"),
-          title: Text(widget.todos[index]),
-          leading: Icon(Icons.fingerprint),
-          trailing: IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () {
-              //Delete this item
-              _deleteTodo(index);
-            },
+        itemBuilder: (context, index) => Card(
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListTile(
+            // subtitle: Text("Detail"),
+            title: Text(widget.todos[index]),
+            leading: Icon(Icons.event),
+            trailing: IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () {
+                //Delete this item
+                _deleteTodo(index);
+              },
+            ),
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {
+          _createTodo(context);
+        },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
