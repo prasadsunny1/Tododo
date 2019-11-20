@@ -3,9 +3,11 @@
 // It is desirable to keep bloc and buisness logic in different files to avoid mess
 import 'dart:async';
 
+import 'package:tododo/todo_service.dart';
+
 class TodoBloc {
   TodoBloc();
-  final List<String> todos = <String>[];
+  TodoServiceBase _todoService = new TodoServiceNonPersistant();
 
   final StreamController<List<String>> _todoListController =
       StreamController<List<String>>();
@@ -13,7 +15,8 @@ class TodoBloc {
   Stream<List<String>> get todoListStream => _todoListController.stream;
 //Logic to retrive process and sink the updated values of todos
   void _refreshStream() {
-    _todoListController.sink.add(todos);
+    var allTodos = _todoService.getAllTodos();
+    _todoListController.sink.add(allTodos);
   }
 
   void dispose() {
@@ -22,22 +25,25 @@ class TodoBloc {
 
   void createTodo(String title) {
     if (title.isEmpty) return;
-    todos.add(title);
+    _todoService.createTodo(title);
     _refreshStream();
   }
 
   void updateTodo(String title, int updateIndex) {
-    todos[updateIndex] = title;
+    _todoService.updateTodo(title, updateIndex);
     _refreshStream();
   }
 
   void deleteTodo(int index) {
-    //just delete
-    todos.removeAt(index);
+    _todoService.deleteTodo(index);
     _refreshStream();
   }
 
   String getTodoAt(int index) {
-    return todos[index];
+    return _todoService.getTodoAt(index);
+  }
+
+  List<String> getAllTodos() {
+    return _todoService.getAllTodos();
   }
 }

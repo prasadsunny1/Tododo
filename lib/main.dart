@@ -110,7 +110,7 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(title: Text(title), actions: []),
       body: StreamBuilder(
         stream: bloc.todoListStream,
-        initialData: bloc.todos,
+        initialData: bloc.getAllTodos(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             var todoList = snapshot.data;
