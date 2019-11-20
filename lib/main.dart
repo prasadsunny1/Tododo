@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:tododo/todo_bloc.dart';
 
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  final List<String> allTodos = ['Pick up milk', 'Call John Wick'];
+  final TodoBloc bloc = new TodoBloc();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,28 +14,21 @@ class MyApp extends StatelessWidget {
       ),
       home: MyHomePage(
         title: 'ToDoDO',
-        todos: allTodos,
+        bloc: bloc,
       ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title, this.todos}) : super(key: key);
+class MyHomePage extends StatelessWidget {
+  MyHomePage({Key key, this.title, this.bloc}) : super(key: key);
   final String title;
-  final List<String> todos;
+  final TodoBloc bloc;
 
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
   TextEditingController _textFieldController = TextEditingController();
 
-  void _deleteTodo(int index) {
-    setState(() {
-      _displayDeleteWarning(context, index);
-    });
+  void _deleteTodo(BuildContext context, int index) {
+    _displayDeleteWarning(context, index);
   }
 
   void _createTodo(BuildContext context) {
@@ -61,9 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
               new FlatButton(
                 child: new Text('SAVE'),
                 onPressed: () {
-                  setState(() {
-                    widget.todos.add(_textFieldController.text);
-                  });
+                  bloc.createTodo(_textFieldController.text);
                   _textFieldController.clear();
                   Navigator.of(context).pop();
                 },
@@ -89,9 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
               new FlatButton(
                 child: new Text('DELETE'),
                 onPressed: () {
-                  setState(() {
-                    widget.todos.removeAt(deleteIndex);
-                  });
+                  bloc.deleteTodo(deleteIndex);
                   Navigator.of(context).pop();
                 },
               ),
@@ -103,24 +93,37 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), actions: []),
-      body: ListView.builder(
-        itemCount: widget.todos.length,
-        itemBuilder: (context, index) => Card(
-          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            // subtitle: Text("Detail"),
-            title: Text(widget.todos[index]),
-            leading: Icon(Icons.event),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () {
-                //Delete this item
-                _deleteTodo(index);
-              },
-            ),
-          ),
-        ),
+      appBar: AppBar(title: Text(title), actions: []),
+      body: StreamBuilder(
+        stream: bloc.todoListStream,
+        initialData: bloc.todos,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            var todoList = snapshot.data;
+            return ListView.builder(
+              itemCount: todoList.length,
+              itemBuilder: (context, index) => Card(
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  // subtitle: Text("Detail"),
+                  title: Text(todoList[index]),
+                  leading: Icon(Icons.event),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () {
+                      //Delete this item
+                      _deleteTodo(context, index);
+                    },
+                  ),
+                ),
+              ),
+            );
+          } else {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
