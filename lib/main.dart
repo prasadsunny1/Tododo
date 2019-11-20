@@ -35,7 +35,17 @@ class MyHomePage extends StatelessWidget {
     _displayAddTodoDialog(context);
   }
 
-  _displayAddTodoDialog(BuildContext context) async {
+  void _editTodo(BuildContext context, int index) {
+    //open dialog with title filled
+    //save on save
+    var currentTitle = bloc.getTodoAt(index);
+    _displayAddTodoDialog(context,
+        isUpdate: true, prefillTitle: currentTitle, updateIndex: index);
+  }
+
+  _displayAddTodoDialog(BuildContext context,
+      {bool isUpdate = false, String prefillTitle, int updateIndex}) async {
+    if (isUpdate) _textFieldController.text = prefillTitle;
     return showDialog(
         context: context,
         builder: (context) {
@@ -55,7 +65,11 @@ class MyHomePage extends StatelessWidget {
               new FlatButton(
                 child: new Text('SAVE'),
                 onPressed: () {
-                  bloc.createTodo(_textFieldController.text);
+                  if (isUpdate) {
+                    bloc.updateTodo(_textFieldController.text, updateIndex);
+                  } else {
+                    bloc.createTodo(_textFieldController.text);
+                  }
                   _textFieldController.clear();
                   Navigator.of(context).pop();
                 },
@@ -108,12 +122,24 @@ class MyHomePage extends StatelessWidget {
                   // subtitle: Text("Detail"),
                   title: Text(todoList[index]),
                   leading: Icon(Icons.event),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      //Delete this item
-                      _deleteTodo(context, index);
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          //Delete this item
+                          _editTodo(context, index);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () {
+                          //Delete this item
+                          _deleteTodo(context, index);
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -9,12 +9,10 @@ class TodoBloc {
 
   final StreamController<List<String>> _todoListController =
       StreamController<List<String>>();
-      
-  Stream<List<String>> get todoListStream => _todoListController.stream;
 
-  void deleteTodo(int index) {
-    //just delete
-    todos.removeAt(index);
+  Stream<List<String>> get todoListStream => _todoListController.stream;
+//Logic to retrive process and sink the updated values of todos
+  void _refreshStream() {
     _todoListController.sink.add(todos);
   }
 
@@ -23,7 +21,23 @@ class TodoBloc {
   }
 
   void createTodo(String title) {
+    if (title.isEmpty) return;
     todos.add(title);
-    _todoListController.sink.add(todos);
+    _refreshStream();
+  }
+
+  void updateTodo(String title, int updateIndex) {
+    todos[updateIndex] = title;
+    _refreshStream();
+  }
+
+  void deleteTodo(int index) {
+    //just delete
+    todos.removeAt(index);
+    _refreshStream();
+  }
+
+  String getTodoAt(int index) {
+    return todos[index];
   }
 }
