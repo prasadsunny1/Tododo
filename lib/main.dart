@@ -1,10 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:tododo/todo_bloc.dart';
+import 'package:tododo/todo_service.dart';
 
-void main() => runApp(MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final service = await TodoServiceFile.init();
+  runApp(MyApp(bloc: TodoBloc(service)));
+}
 
+@immutable
 class MyApp extends StatelessWidget {
-  final TodoBloc bloc = new TodoBloc();
+  const MyApp({
+    Key key,
+    @required this.bloc,
+  }) : super(key: key);
+
+  final TodoBloc bloc;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,11 +32,22 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
-  MyHomePage({Key key, this.title, this.bloc}) : super(key: key);
+@immutable
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({
+    Key key,
+    @required this.title,
+    @required this.bloc,
+  }) : super(key: key);
+
   final String title;
   final TodoBloc bloc;
 
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
   TextEditingController _textFieldController = TextEditingController();
 
   void _deleteTodo(BuildContext context, int index) {
@@ -35,114 +58,137 @@ class MyHomePage extends StatelessWidget {
     _displayAddTodoDialog(context);
   }
 
-  void _editTodo(BuildContext context, int index) {
+  void _editTodo(BuildContext context, int index) async {
     //open dialog with title filled
     //save on save
-    var currentTitle = bloc.getTodoAt(index);
-    _displayAddTodoDialog(context,
-        isUpdate: true, prefillTitle: currentTitle, updateIndex: index);
+    var currentTitle = await widget.bloc.getTodoAt(index);
+    _displayAddTodoDialog(
+      context,
+      isUpdate: true,
+      prefillTitle: currentTitle.text,
+      updateIndex: index,
+    );
   }
 
-  _displayAddTodoDialog(BuildContext context,
-      {bool isUpdate = false, String prefillTitle, int updateIndex}) async {
+  Future<void> _displayAddTodoDialog(
+    BuildContext context, {
+    bool isUpdate = false,
+    String prefillTitle,
+    int updateIndex,
+  }) async {
     if (isUpdate) _textFieldController.text = prefillTitle;
     return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Add a Todo'),
-            content: TextField(
-              controller: _textFieldController,
-              decoration: InputDecoration(hintText: "Input some text"),
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add a Todo'),
+          content: TextField(
+            controller: _textFieldController,
+            decoration: InputDecoration(hintText: "Input some text"),
+          ),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text('CANCEL'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
-            actions: <Widget>[
-              new FlatButton(
-                child: new Text('CANCEL'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              new FlatButton(
-                child: new Text('SAVE'),
-                onPressed: () {
-                  if (isUpdate) {
-                    bloc.updateTodo(_textFieldController.text, updateIndex);
-                  } else {
-                    bloc.createTodo(_textFieldController.text);
-                  }
-                  _textFieldController.clear();
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
+            new FlatButton(
+              child: new Text('SAVE'),
+              onPressed: () {
+                if (isUpdate) {
+                  widget.bloc
+                      .updateTodo(_textFieldController.text, updateIndex);
+                } else {
+                  widget.bloc.createTodo(_textFieldController.text);
+                }
+                _textFieldController.clear();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  _displayDeleteWarning(BuildContext context, int deleteIndex) async {
+  Future<void> _displayDeleteWarning(
+      BuildContext context, int deleteIndex) async {
     return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Confirm deletion'),
-            actions: <Widget>[
-              new FlatButton(
-                child: new Text('CANCEL'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-              new FlatButton(
-                child: new Text('DELETE'),
-                onPressed: () {
-                  bloc.deleteTodo(deleteIndex);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        });
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Confirm deletion'),
+          actions: <Widget>[
+            new FlatButton(
+              child: new Text('CANCEL'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            new FlatButton(
+              child: new Text('DELETE'),
+              onPressed: () {
+                widget.bloc.deleteTodo(deleteIndex);
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title), actions: []),
-      body: StreamBuilder(
-        stream: bloc.todoListStream,
-        initialData: bloc.getAllTodos(),
-        builder: (context, snapshot) {
+      appBar: AppBar(title: Text(widget.title)),
+      body: StreamBuilder<List<TodoItem>>(
+        initialData: widget.bloc.todoList,
+        stream: widget.bloc.todoListStream,
+        builder: (BuildContext context, AsyncSnapshot<List<TodoItem>> snapshot) {
           if (snapshot.hasData) {
             var todoList = snapshot.data;
             return ListView.builder(
               itemCount: todoList.length,
-              itemBuilder: (context, index) => Card(
-                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  // subtitle: Text("Detail"),
-                  title: Text(todoList[index]),
-                  leading: Icon(Icons.event),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () {
-                          //Delete this item
-                          _editTodo(context, index);
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          //Delete this item
-                          _deleteTodo(context, index);
-                        },
-                      ),
-                    ],
+              itemBuilder: (BuildContext context, int index) {
+                final item = todoList[index];
+                return Card(
+                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    title: Text(item.text),
+                    leading: Icon(Icons.event),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        if(item.inFlight)
+                          const SizedBox(
+                            width: kMinInteractiveDimension,
+                            height: kMinInteractiveDimension,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            //Delete this item
+                            _editTodo(context, index);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            //Delete this item
+                            _deleteTodo(context, index);
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           } else {
             return Center(

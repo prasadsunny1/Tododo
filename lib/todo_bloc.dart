@@ -6,17 +6,17 @@ import 'dart:async';
 import 'package:tododo/todo_service.dart';
 
 class TodoBloc {
-  TodoBloc();
-  TodoServiceBase _todoService = new TodoServiceNonPersistant();
+  TodoBloc(this._todoService);
+  
+  TodoServiceBase _todoService;
+  final _todoListController = StreamController<List<TodoItem>>.broadcast();
 
-  final StreamController<List<String>> _todoListController =
-      StreamController<List<String>>();
+  List<TodoItem> get todoList => _todoService.todoList;
+  Stream<List<TodoItem>> get todoListStream => _todoListController.stream;
 
-  Stream<List<String>> get todoListStream => _todoListController.stream;
-//Logic to retrive process and sink the updated values of todos
-  void _refreshStream() {
-    var allTodos = _todoService.getAllTodos();
-    _todoListController.sink.add(allTodos);
+  // Logic to retrive process and sink the updated values of todos
+  void _updateStream() {
+    _todoListController.sink.add(_todoService.todoList);
   }
 
   void dispose() {
@@ -25,25 +25,24 @@ class TodoBloc {
 
   void createTodo(String title) {
     if (title.isEmpty) return;
-    _todoService.createTodo(title);
-    _refreshStream();
+    _todoService.createTodo(title).forEach((item){
+      _updateStream();
+    });
+  }
+
+  Future<TodoItem> getTodoAt(int index) {
+    return _todoService.readTodo(index).first;
   }
 
   void updateTodo(String title, int updateIndex) {
-    _todoService.updateTodo(title, updateIndex);
-    _refreshStream();
+    _todoService.updateTodo(updateIndex, title).forEach((item){
+      _updateStream();
+    });
   }
 
   void deleteTodo(int index) {
-    _todoService.deleteTodo(index);
-    _refreshStream();
-  }
-
-  String getTodoAt(int index) {
-    return _todoService.getTodoAt(index);
-  }
-
-  List<String> getAllTodos() {
-    return _todoService.getAllTodos();
+    _todoService.deleteTodo(index).forEach((item){
+      _updateStream();
+    });
   }
 }
