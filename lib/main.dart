@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:tododo/todo_bloc.dart';
 import 'package:tododo/todo_service.dart';
 
@@ -62,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
     //open dialog with title filled
     //save on save
     var currentTitle = await widget.bloc.getTodoAt(index);
-    _displayAddTodoDialog(
+    await _displayAddTodoDialog(
       context,
       isUpdate: true,
       prefillTitle: currentTitle.text,
@@ -77,36 +78,13 @@ class _MyHomePageState extends State<MyHomePage> {
     int updateIndex,
   }) async {
     if (isUpdate) _textFieldController.text = prefillTitle;
-    return showDialog(
+    return await showDialog<DateTime>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Add a Todo'),
-          content: TextField(
-            controller: _textFieldController,
-            decoration: InputDecoration(hintText: "Input some text"),
-          ),
-          actions: <Widget>[
-            new FlatButton(
-              child: new Text('CANCEL'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            new FlatButton(
-              child: new Text('SAVE'),
-              onPressed: () {
-                if (isUpdate) {
-                  widget.bloc
-                      .updateTodo(_textFieldController.text, updateIndex);
-                } else {
-                  widget.bloc.createTodo(_textFieldController.text);
-                }
-                _textFieldController.clear();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        return CreateTodoAlertDialog(
+          bloc: widget.bloc,
+          isUpdate: isUpdate,
+          updateIndex: updateIndex,
         );
       },
     );
@@ -146,7 +124,8 @@ class _MyHomePageState extends State<MyHomePage> {
       body: StreamBuilder<List<TodoItem>>(
         initialData: widget.bloc.todoList,
         stream: widget.bloc.todoListStream,
-        builder: (BuildContext context, AsyncSnapshot<List<TodoItem>> snapshot) {
+        builder:
+            (BuildContext context, AsyncSnapshot<List<TodoItem>> snapshot) {
           if (snapshot.hasData) {
             var todoList = snapshot.data;
             return ListView.builder(
@@ -157,11 +136,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
                     title: Text(item.text),
+                    subtitle: Text(
+                        '${item.reminderDate.day}-${item.reminderDate.month} ${item.reminderDate.hour}:${item.reminderDate.minute} '),
                     leading: Icon(Icons.event),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        if(item.inFlight)
+                        if (item.inFlight)
                           const SizedBox(
                             width: kMinInteractiveDimension,
                             height: kMinInteractiveDimension,
@@ -204,6 +185,86 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
+    );
+  }
+}
+
+class CreateTodoAlertDialog extends StatefulWidget {
+  final int updateIndex;
+
+  CreateTodoAlertDialog({
+    Key key,
+    this.bloc,
+    this.isUpdate,
+    this.updateIndex,
+  }) : super(key: key);
+  final TodoBloc bloc;
+  final bool isUpdate;
+  @override
+  _CreateTodoAlertDialogState createState() => _CreateTodoAlertDialogState();
+}
+
+class _CreateTodoAlertDialogState extends State<CreateTodoAlertDialog> {
+  final TextEditingController _textFieldController = TextEditingController();
+
+  var dateTime = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add a Todo'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            controller: _textFieldController,
+            decoration: InputDecoration(hintText: "Input some text"),
+          ),
+          Row(
+            children: <Widget>[
+              IconButton(
+                icon: Icon(Icons.access_time),
+                onPressed: () {
+                  DatePicker.showDateTimePicker(context, onConfirm: (date) {
+                    print('confirm $date');
+                    setState(() {
+                      dateTime = date;
+                    });
+                  });
+                },
+              ),
+              Text('${dateTime.year} - ${dateTime.month} - ${dateTime.day}'),
+            ],
+          )
+        ],
+      ),
+      actions: <Widget>[
+        new FlatButton(
+          child: new Text('CANCEL'),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
+        new FlatButton(
+          child: new Text('SAVE'),
+          onPressed: () {
+            if (widget.isUpdate) {
+              widget.bloc.updateTodo(
+                _textFieldController.text,
+                widget.updateIndex,
+                reminderDate: dateTime ?? null,
+              );
+            } else {
+              widget.bloc.createTodo(
+                _textFieldController.text,
+                reminderDate: dateTime ?? null,
+              );
+            }
+            _textFieldController.clear();
+            Navigator.of(context).pop();
+          },
+        ),
+      ],
     );
   }
 }

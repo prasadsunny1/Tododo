@@ -23,9 +23,9 @@ class TodoBloc {
     _todoListController.close();
   }
 
-  void createTodo(String title) {
+  void createTodo(String title,{DateTime reminderDate}) {
     if (title.isEmpty) return;
-    _todoService.createTodo(title).forEach((item){
+    _todoService.createTodo(title,reminderDate: reminderDate).forEach((item){
       _updateStream();
     });
   }
@@ -34,8 +34,8 @@ class TodoBloc {
     return _todoService.readTodo(index).first;
   }
 
-  void updateTodo(String title, int updateIndex) {
-    _todoService.updateTodo(updateIndex, title).forEach((item){
+  void updateTodo(String title, int updateIndex,{DateTime reminderDate}) {
+    _todoService.updateTodo(updateIndex, title,reminderDate: reminderDate).forEach((item){
       _updateStream();
     });
   }
