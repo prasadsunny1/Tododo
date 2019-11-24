@@ -16,7 +16,7 @@ class TodoItem {
     return TodoItem(
       text: json['text'] as String,
       inFlight: json['inFlight'] as bool,
-      reminderDate: DateTime.parse(json["birthdate"]),
+      reminderDate: DateTime.parse(json["reminderDate"]),
     );
   }
 
