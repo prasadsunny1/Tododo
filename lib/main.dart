@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:tododo/settings_page.dart';
 import 'package:tododo/todo_bloc.dart';
 import 'package:tododo/todo_service.dart';
 
@@ -168,7 +169,22 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.settings),
+            onPressed: () {
+              //navigate to settings page
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SettingsPage(),
+                ),
+              );
+            },
+          )
+        ],
+      ),
       body: StreamBuilder<List<TodoItem>>(
         initialData: widget.bloc.todoList,
         stream: widget.bloc.todoListStream,
