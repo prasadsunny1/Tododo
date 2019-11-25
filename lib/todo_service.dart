@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:meta/meta.dart';
 import 'package:path_provider/path_provider.dart' as pp;
 import 'package:path/path.dart' as p;
@@ -50,14 +53,15 @@ class TodoItem {
 abstract class TodoServiceBase {
   List<TodoItem> get todoList;
   // CRUD
-  Stream<TodoItem> createTodo(String title,{DateTime reminderDate});
+  Stream<TodoItem> createTodo(String title, {DateTime reminderDate});
   Stream<TodoItem> readTodo(int index);
-  Stream<TodoItem> updateTodo(int index, String title,{DateTime reminderDate});
+  Stream<TodoItem> updateTodo(int index, String title, {DateTime reminderDate});
   Stream<TodoItem> deleteTodo(int index);
 }
 
 class TodoServiceFile implements TodoServiceBase {
-  static Future<TodoServiceFile> init() async {
+  static Future<TodoServiceFile> init(
+      FlutterLocalNotificationsPlugin flutterLocalNotification) async {
     final dir = await pp.getApplicationDocumentsDirectory();
     final file = File(p.join(dir.path, 'todo.json'));
     List<TodoItem> todos = [];
@@ -68,10 +72,12 @@ class TodoServiceFile implements TodoServiceBase {
           .map((item) => TodoItem.fromJson(item))
           .toList();
     }
-    return TodoServiceFile._(file, todos);
+    return TodoServiceFile._(file, todos, flutterLocalNotification);
   }
 
-  TodoServiceFile._(this._todoFile, this._todoList);
+  TodoServiceFile._(
+      this._todoFile, this._todoList, this.flutterLocalNotification);
+  final FlutterLocalNotificationsPlugin flutterLocalNotification;
 
   File _todoFile;
   List<TodoItem> _todoList;
@@ -80,8 +86,9 @@ class TodoServiceFile implements TodoServiceBase {
   List<TodoItem> get todoList => _todoList;
 
   @override
-  Stream<TodoItem> createTodo(String title,{DateTime reminderDate}) async* {
-    final item = TodoItem(text: title, inFlight: true,reminderDate: reminderDate);
+  Stream<TodoItem> createTodo(String title, {DateTime reminderDate}) async* {
+    final item =
+        TodoItem(text: title, inFlight: true, reminderDate: reminderDate);
     _todoList.add(item);
     yield item;
     try {
@@ -92,7 +99,27 @@ class TodoServiceFile implements TodoServiceBase {
       //persist the inFlight state too
       await persistTodos();
       yield _todoList[index];
+      //TODO! schedule notification
+      _scheduleNofication(item);
     }
+  }
+
+  void _scheduleNofication(TodoItem todo) {
+    var notifID = (todo.reminderDate.difference(DateTime(2019)).inSeconds);
+
+    flutterLocalNotification.schedule(
+      notifID,
+      'You have a ToDoDo',
+      todo.text,
+      todo.reminderDate.subtract(
+        Duration(minutes: 2),
+      ),
+      NotificationDetails(
+        AndroidNotificationDetails(
+            'ToDoReminder', 'ToDoReminder', 'This is a todo reminder channel'),
+        IOSNotificationDetails(),
+      ),
+    );
   }
 
   @override
@@ -101,8 +128,10 @@ class TodoServiceFile implements TodoServiceBase {
   }
 
   @override
-  Stream<TodoItem> updateTodo(int index, String title,{DateTime reminderDate}) async* {
-    final item = _todoList[index].copyWith(text: title, inFlight: true,reminderDate: reminderDate ?? null);
+  Stream<TodoItem> updateTodo(int index, String title,
+      {DateTime reminderDate}) async* {
+    final item = _todoList[index].copyWith(
+        text: title, inFlight: true, reminderDate: reminderDate ?? null);
     _todoList[index] = item;
     yield item;
     try {
@@ -111,7 +140,26 @@ class TodoServiceFile implements TodoServiceBase {
       final index = _todoList.indexOf(item);
       _todoList[index] = item.copyWith(inFlight: false);
       yield _todoList[index];
+      await _modifyScheduledNotificationFor(index, item);
     }
+  }
+
+  /// Removes old notifications from schedule and reschedules for [todoitem]
+  Future<void> _modifyScheduledNotificationFor(
+    int index,
+    TodoItem todoitem,
+  ) async {
+    var oldTodoItem = todoList[index];
+    var pendingNotifications =
+        await flutterLocalNotification.pendingNotificationRequests();
+    var idOfOldNotification = pendingNotifications.indexWhere(
+      (x) =>
+          x.id ==
+          oldTodoItem.reminderDate.millisecondsSinceEpoch -
+              DateTime(2019).millisecondsSinceEpoch,
+    );
+    await flutterLocalNotification.cancel(idOfOldNotification);
+    _scheduleNofication(todoitem);
   }
 
   @override
@@ -132,8 +180,9 @@ class TodoServiceNonPersistant implements TodoServiceBase {
   final List<TodoItem> todoList = <TodoItem>[];
 
   @override
-  Stream<TodoItem> createTodo(String title,{DateTime reminderDate}) {
-    final item = TodoItem(text: title, inFlight: false,reminderDate: reminderDate);
+  Stream<TodoItem> createTodo(String title, {DateTime reminderDate}) {
+    final item =
+        TodoItem(text: title, inFlight: false, reminderDate: reminderDate);
     todoList.add(item);
     return Stream.value(item);
   }
@@ -144,9 +193,10 @@ class TodoServiceNonPersistant implements TodoServiceBase {
   }
 
   @override
-  Stream<TodoItem> updateTodo(int index, String title,{DateTime reminderDate}) {
-    return Stream.value(
-        todoList[index] = todoList[index].copyWith(text: title,reminderDate: reminderDate));
+  Stream<TodoItem> updateTodo(int index, String title,
+      {DateTime reminderDate}) {
+    return Stream.value(todoList[index] =
+        todoList[index].copyWith(text: title, reminderDate: reminderDate));
   }
 
   @override

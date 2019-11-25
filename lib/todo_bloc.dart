@@ -7,7 +7,7 @@ import 'package:tododo/todo_service.dart';
 
 class TodoBloc {
   TodoBloc(this._todoService);
-  
+
   TodoServiceBase _todoService;
   final _todoListController = StreamController<List<TodoItem>>.broadcast();
 
@@ -23,9 +23,9 @@ class TodoBloc {
     _todoListController.close();
   }
 
-  void createTodo(String title,{DateTime reminderDate}) {
+  void createTodo(String title, {DateTime reminderDate}) {
     if (title.isEmpty) return;
-    _todoService.createTodo(title,reminderDate: reminderDate).forEach((item){
+    _todoService.createTodo(title, reminderDate: reminderDate).forEach((item) {
       _updateStream();
     });
   }
@@ -34,14 +34,16 @@ class TodoBloc {
     return _todoService.readTodo(index).first;
   }
 
-  void updateTodo(String title, int updateIndex,{DateTime reminderDate}) {
-    _todoService.updateTodo(updateIndex, title,reminderDate: reminderDate).forEach((item){
+  void updateTodo(String title, int updateIndex, {DateTime reminderDate}) {
+    _todoService
+        .updateTodo(updateIndex, title, reminderDate: reminderDate)
+        .forEach((item) {
       _updateStream();
     });
   }
 
   void deleteTodo(int index) {
-    _todoService.deleteTodo(index).forEach((item){
+    _todoService.deleteTodo(index).forEach((item) {
       _updateStream();
     });
   }

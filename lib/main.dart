@@ -6,36 +6,54 @@ import 'package:tododo/todo_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final service = await TodoServiceFile.init();
 
-//   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-//       new FlutterLocalNotificationsPlugin();
-//   flutterLocalNotificationsPlugin.schedule(
-//       0,
-//       'TestNotif',
-//       '',
-//       DateTime.now().add(Duration(seconds: 10)),
-//       NotificationDetails(
-//           AndroidNotificationDetails(
-//               'channelId', 'Channel 1', 'This is a cool channel'),
-//           IOSNotificationDetails()));
-// // initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
-//   var initializationSettingsAndroid =
-//       new AndroidInitializationSettings('app_icon');
-//   var initializationSettingsIOS = IOSInitializationSettings(
-//       onDidReceiveLocalNotification:
-//           (int id, String title, String body, String payload) async {});
-//   var initializationSettings = InitializationSettings(
-//       initializationSettingsAndroid, initializationSettingsIOS);
-//   await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-//       onSelectNotification: (String payload) async {
-//     if (payload != null) {
-//       debugPrint('notification payload: ' + payload);
-//     }
-//     // selectNotificationSubject.add(payload);
-//   });
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      new FlutterLocalNotificationsPlugin();
 
-  runApp(MyApp(bloc: TodoBloc(service)));
+// initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
+  var initializationSettingsAndroid =
+      new AndroidInitializationSettings('app_icon');
+  var initializationSettingsIOS = IOSInitializationSettings(
+      onDidReceiveLocalNotification:
+          (int id, String title, String body, String payload) async {});
+  var initializationSettings = InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (String payload) async {
+    if (payload != null) {
+      debugPrint('notification payload: ' + payload);
+    }
+    // selectNotificationSubject.add(payload);
+  });
+
+  //Scheduling a notification
+  // flutterLocalNotificationsPlugin.schedule(
+  //   0,
+  //   'TestNotif',
+  //   '',
+  //   DateTime.now().add(
+  //     Duration(seconds: 30),
+  //   ),
+  //   NotificationDetails(
+  //     AndroidNotificationDetails(
+  //         'channelId', 'Channel 1', 'This is a cool channel'),
+  //     IOSNotificationDetails(),
+  //   ),
+  // );
+
+  //finding a pending notification
+//   var pendingNotifications =
+//       await flutterLocalNotificationsPlugin.pendingNotificationRequests();
+//   var indexOfATodo = pendingNotifications.indexWhere((x) => x.body == '');
+// //canceling a notification
+//   flutterLocalNotificationsPlugin.cancel(indexOfATodo);
+  final service = await TodoServiceFile.init(flutterLocalNotificationsPlugin);
+
+  runApp(
+    MyApp(
+      bloc: TodoBloc(service),
+    ),
+  );
 }
 
 @immutable
@@ -267,17 +285,24 @@ class _CreateTodoAlertDialogState extends State<CreateTodoAlertDialog> {
               IconButton(
                 icon: Icon(Icons.access_time),
                 onPressed: () {
-                  DatePicker.showDateTimePicker(context, onConfirm: (date) {
-                    print('confirm $date');
-                    setState(() {
-                      dateTime = date;
-                    });
-                  });
+                  DatePicker.showDateTimePicker(
+                    context,
+                    currentTime: currentTodoItem?.reminderDate,
+                    minTime: DateTime.now(),
+                    onConfirm: (date) {
+                      print('confirm $date');
+                      setState(() {
+                        dateTime = date;
+                      });
+                    },
+                  );
                 },
               ),
-              Text('${dateTime.year} - ${dateTime.month} - ${dateTime.day}'),
+              Text(
+                '${dateTime.day} - ${dateTime.month} | ${dateTime.hour}:${dateTime.minute}',
+              ),
             ],
-          )
+          ),
         ],
       ),
       actions: <Widget>[
