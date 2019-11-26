@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:provider/provider.dart';
 import 'package:tododo/settings_page.dart';
+import 'package:tododo/theme_bloc.dart';
 import 'package:tododo/todo_bloc.dart';
 import 'package:tododo/todo_service.dart';
 
@@ -49,10 +51,15 @@ Future<void> main() async {
 // //canceling a notification
 //   flutterLocalNotificationsPlugin.cancel(indexOfATodo);
   final service = await TodoServiceFile.init(flutterLocalNotificationsPlugin);
-
+  final themeBloc = ThemeBloc();
   runApp(
-    MyApp(
-      bloc: TodoBloc(service),
+    MultiProvider(
+      providers: [
+        Provider<ThemeBloc>.value(value: themeBloc),
+      ],
+      child: MyApp(
+        bloc: TodoBloc(service),
+      ),
     ),
   );
 }
@@ -68,16 +75,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Todo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(
-        title: 'ToDoDO',
-        bloc: bloc,
-      ),
-    );
+    ThemeBloc themeBloc = Provider.of<ThemeBloc>(context);
+    return StreamBuilder<AppTheme>(
+        stream: themeBloc.stream,
+        builder: (context, snapshot) {
+          ThemeData theme;
+          switch (snapshot.data) {
+            case AppTheme.Light:
+              theme = ThemeData(primarySwatch: Colors.blue);
+              break;
+            case AppTheme.Dark:
+              theme = ThemeData(
+                  primarySwatch: Colors.blue, brightness: Brightness.dark);
+              break;
+            case AppTheme.Note:
+              theme = ThemeData(
+                  primarySwatch: Colors.amber, brightness: Brightness.light);
+              break;
+          }
+          return MaterialApp(
+            title: 'Flutter Todo',
+            theme: theme,
+            home: MyHomePage(
+              title: 'ToDoDO',
+              bloc: bloc,
+            ),
+          );
+        });
   }
 }
 

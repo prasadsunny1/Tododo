@@ -26,6 +26,8 @@ dependencies:
   path_provider: any
   flutter_datetime_picker: ^1.2.8
   flutter_local_notifications: ^0.8.4+3
+  provider: any
+  enum_to_string: ^1.0.8
 
 dev_dependencies:
   flutter_test:
