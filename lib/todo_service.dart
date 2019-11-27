@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:meta/meta.dart';
@@ -96,10 +95,8 @@ class TodoServiceFile implements TodoServiceBase {
     } finally {
       final index = _todoList.indexOf(item);
       _todoList[index] = item.copyWith(inFlight: false);
-      //persist the inFlight state too
       await persistTodos();
       yield _todoList[index];
-      //TODO! schedule notification
       _scheduleNofication(item);
     }
   }
@@ -116,7 +113,8 @@ class TodoServiceFile implements TodoServiceBase {
       ),
       NotificationDetails(
         AndroidNotificationDetails(
-            'ToDoReminder', 'ToDoReminder', 'This is a todo reminder channel'),
+            'ToDoReminder', 'ToDoReminder', 'This is a todo reminder channel',
+            sound: 'inflicted', importance: Importance.High),
         IOSNotificationDetails(),
       ),
     );
