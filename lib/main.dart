@@ -50,16 +50,16 @@ Future<void> main() async {
 //   var indexOfATodo = pendingNotifications.indexWhere((x) => x.body == '');
 // //canceling a notification
 //   flutterLocalNotificationsPlugin.cancel(indexOfATodo);
-  final service = await TodoServiceFile.init(flutterLocalNotificationsPlugin);
+  final todoService =
+      await TodoServiceFile.init(flutterLocalNotificationsPlugin);
   final themeBloc = ThemeBloc();
   runApp(
     MultiProvider(
       providers: [
         Provider<ThemeBloc>.value(value: themeBloc),
+        Provider<TodoBloc>.value(value: TodoBloc(todoService))
       ],
-      child: MyApp(
-        bloc: TodoBloc(service),
-      ),
+      child: MyApp(),
     ),
   );
 }
@@ -68,14 +68,12 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({
     Key key,
-    @required this.bloc,
   }) : super(key: key);
-
-  final TodoBloc bloc;
 
   @override
   Widget build(BuildContext context) {
-    ThemeBloc themeBloc = Provider.of<ThemeBloc>(context);
+    final TodoBloc todoBloc = Provider.of<TodoBloc>(context);
+    final ThemeBloc themeBloc = Provider.of<ThemeBloc>(context);
     return StreamBuilder<AppTheme>(
         stream: themeBloc.stream,
         builder: (context, snapshot) {
@@ -98,7 +96,7 @@ class MyApp extends StatelessWidget {
             theme: theme,
             home: MyHomePage(
               title: 'ToDoDO',
-              bloc: bloc,
+              todoBloc: todoBloc,
             ),
           );
         });
@@ -110,11 +108,11 @@ class MyHomePage extends StatefulWidget {
   const MyHomePage({
     Key key,
     @required this.title,
-    @required this.bloc,
+    @required this.todoBloc,
   }) : super(key: key);
 
   final String title;
-  final TodoBloc bloc;
+  final TodoBloc todoBloc;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -132,10 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _editTodo(BuildContext context, int index) async {
-    //open dialog with title filled
-    //save on save
-    //get current item
-    var currentTodoItem = await widget.bloc.getTodoAt(index);
+    var currentTodoItem = await widget.todoBloc.getTodoAt(index);
     await _displayAddTodoDialog(
       context,
       isUpdate: true,
@@ -155,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       builder: (context) {
         return CreateTodoAlertDialog(
-            bloc: widget.bloc,
+            bloc: widget.todoBloc,
             isUpdate: isUpdate,
             updateIndex: updateIndex,
             currentTodoItem: currentTodoItem);
@@ -180,7 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
             new FlatButton(
               child: new Text('DELETE'),
               onPressed: () {
-                widget.bloc.deleteTodo(deleteIndex);
+                widget.todoBloc.deleteTodo(deleteIndex);
                 Navigator.of(context).pop();
               },
             ),
@@ -210,8 +205,8 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: StreamBuilder<List<TodoItem>>(
-        initialData: widget.bloc.todoList,
-        stream: widget.bloc.todoListStream,
+        initialData: widget.todoBloc.todoList,
+        stream: widget.todoBloc.todoListStream,
         builder:
             (BuildContext context, AsyncSnapshot<List<TodoItem>> snapshot) {
           if (snapshot.hasData) {
