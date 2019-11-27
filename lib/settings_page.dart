@@ -1,12 +1,12 @@
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tododo/theme_bloc.dart';
+import 'package:tododo/settings_bloc.dart';
 
 class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final ThemeBloc themeBloc = Provider.of<ThemeBloc>(context);
+    final SettingsBloc themeBloc = Provider.of<SettingsBloc>(context);
 
     return Scaffold(
       appBar: AppBar(

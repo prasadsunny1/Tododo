@@ -1,62 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
 import 'package:tododo/settings_page.dart';
-import 'package:tododo/theme_bloc.dart';
+import 'package:tododo/settings_bloc.dart';
 import 'package:tododo/todo_bloc.dart';
 import 'package:tododo/todo_service.dart';
 
+import 'notification_service.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      new FlutterLocalNotificationsPlugin();
-
-// initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
-  var initializationSettingsAndroid =
-      new AndroidInitializationSettings('app_icon');
-  var initializationSettingsIOS = IOSInitializationSettings(
-      onDidReceiveLocalNotification:
-          (int id, String title, String body, String payload) async {});
-  var initializationSettings = InitializationSettings(
-      initializationSettingsAndroid, initializationSettingsIOS);
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
-      onSelectNotification: (String payload) async {
-    if (payload != null) {
-      debugPrint('notification payload: ' + payload);
-    }
-    // selectNotificationSubject.add(payload);
-  });
-
-  //Scheduling a notification
-  // flutterLocalNotificationsPlugin.schedule(
-  //   0,
-  //   'TestNotif',
-  //   '',
-  //   DateTime.now().add(
-  //     Duration(seconds: 30),
-  //   ),
-  //   NotificationDetails(
-  //     AndroidNotificationDetails(
-  //         'channelId', 'Channel 1', 'This is a cool channel'),
-  //     IOSNotificationDetails(),
-  //   ),
-  // );
-
-  //finding a pending notification
-//   var pendingNotifications =
-//       await flutterLocalNotificationsPlugin.pendingNotificationRequests();
-//   var indexOfATodo = pendingNotifications.indexWhere((x) => x.body == '');
-// //canceling a notification
-//   flutterLocalNotificationsPlugin.cancel(indexOfATodo);
-  final todoService =
-      await TodoServiceFile.init(flutterLocalNotificationsPlugin);
-  final themeBloc = ThemeBloc();
+  NotificationService notificationService = await NotificationService.init();
+  final todoService = await TodoServiceFile.init(notificationService);
   runApp(
     MultiProvider(
       providers: [
-        Provider<ThemeBloc>.value(value: themeBloc),
+        Provider<SettingsBloc>.value(value: SettingsBloc()),
         Provider<TodoBloc>.value(value: TodoBloc(todoService))
       ],
       child: MyApp(),
@@ -73,9 +32,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TodoBloc todoBloc = Provider.of<TodoBloc>(context);
-    final ThemeBloc themeBloc = Provider.of<ThemeBloc>(context);
+    final SettingsBloc settingsBloc = Provider.of<SettingsBloc>(context);
     return StreamBuilder<AppTheme>(
-        stream: themeBloc.stream,
+        stream: settingsBloc.themeStream,
         builder: (context, snapshot) {
           ThemeData theme;
           switch (snapshot.data) {
