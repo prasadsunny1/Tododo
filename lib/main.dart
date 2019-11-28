@@ -3,6 +3,7 @@ import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:tododo/settings_page.dart';
 import 'package:tododo/settings_bloc.dart';
+import 'package:tododo/settings_service.dart';
 import 'package:tododo/todo_bloc.dart';
 import 'package:tododo/todo_service.dart';
 
@@ -12,11 +13,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   NotificationService notificationService = await NotificationService.init();
   final todoService = await TodoServiceFile.init(notificationService);
+  final settingService = await SettingsService.init();
   runApp(
     MultiProvider(
       providers: [
-        Provider<SettingsBloc>.value(value: SettingsBloc()),
-        Provider<TodoBloc>.value(value: TodoBloc(todoService))
+        Provider<SettingsBloc>.value(value: SettingsBloc(settingService)),
+        Provider<TodoBloc>.value(value: TodoBloc(todoService)),
       ],
       child: MyApp(),
     ),
@@ -34,6 +36,7 @@ class MyApp extends StatelessWidget {
     final TodoBloc todoBloc = Provider.of<TodoBloc>(context);
     final SettingsBloc settingsBloc = Provider.of<SettingsBloc>(context);
     return StreamBuilder<AppTheme>(
+        initialData: settingsBloc.currentTheme,
         stream: settingsBloc.themeStream,
         builder: (context, snapshot) {
           ThemeData theme;

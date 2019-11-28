@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:tododo/settings_service.dart';
+
 enum AppTheme {
   Light,
   Dark,
@@ -8,8 +10,11 @@ enum AppTheme {
 
 class SettingsBloc {
   final _themeStreamController = StreamController<AppTheme>();
+  final SettingsService _settingService;
 
-  AppTheme currentTheme = AppTheme.Light;
+  SettingsBloc(this._settingService);
+
+  AppTheme get currentTheme => _settingService.currentTheme;
   Stream<AppTheme> get themeStream => _themeStreamController.stream;
 
   void dispose() {
@@ -17,7 +22,7 @@ class SettingsBloc {
   }
 
   void switchTheme(AppTheme theme) {
-    currentTheme = theme;
+    _settingService.switchTheme(theme);
     _themeStreamController.sink.add(theme);
   }
 }
