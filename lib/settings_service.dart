@@ -83,4 +83,6 @@ class SettingsService {
     currentTheme = theme;
     saveSetting<AppTheme>(setting: Setting.CurrentTheme, value: currentTheme);
   }
+
+  
 }
