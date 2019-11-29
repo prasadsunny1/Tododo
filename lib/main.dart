@@ -1,3 +1,5 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:provider/provider.dart';
@@ -53,9 +55,14 @@ class MyApp extends StatelessWidget {
                   primarySwatch: Colors.amber, brightness: Brightness.light);
               break;
           }
+          FirebaseAnalytics analytics = FirebaseAnalytics();
+
           return MaterialApp(
             title: 'Flutter Todo',
             theme: theme,
+            navigatorObservers: [
+              FirebaseAnalyticsObserver(analytics: analytics),
+            ],
             home: MyHomePage(
               title: 'ToDoDO',
               todoBloc: todoBloc,
