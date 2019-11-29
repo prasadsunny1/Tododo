@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_analytics/observer.dart';
 import 'package:flutter/material.dart';
@@ -8,23 +10,36 @@ import 'package:tododo/settings_bloc.dart';
 import 'package:tododo/settings_service.dart';
 import 'package:tododo/todo_bloc.dart';
 import 'package:tododo/todo_service.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import 'notification_service.dart';
 
 Future<void> main() async {
+  // Set `enableInDevMode` to true to see reports while in debug mode
+  // This is only to be used for confirming that reports are being
+  // submitted as expected. It is not intended to be used for everyday
+  // development.
+//  Crashlytics.instance.enableInDevMode = true;
+
+  // Pass all uncaught errors from the framework to Crashlytics.
+  FlutterError.onError = Crashlytics.instance.recordFlutterError;
+
   WidgetsFlutterBinding.ensureInitialized();
   NotificationService notificationService = await NotificationService.init();
   final todoService = await TodoServiceFile.init(notificationService);
   final settingService = await SettingsService.init();
-  runApp(
-    MultiProvider(
-      providers: [
-        Provider<SettingsBloc>.value(value: SettingsBloc(settingService)),
-        Provider<TodoBloc>.value(value: TodoBloc(todoService)),
-      ],
-      child: MyApp(),
-    ),
-  );
+
+  runZoned<Future<void>>(() async {
+    runApp(
+      MultiProvider(
+        providers: [
+          Provider<SettingsBloc>.value(value: SettingsBloc(settingService)),
+          Provider<TodoBloc>.value(value: TodoBloc(todoService)),
+        ],
+        child: MyApp(),
+      ),
+    );
+  }, onError: Crashlytics.instance.recordError);
 }
 
 @immutable

@@ -30,6 +30,7 @@ dependencies:
   enum_to_string: ^1.0.8
   shared_preferences: ^0.5.4+6
   firebase_analytics: ^5.0.6
+  firebase_crashlytics: ^0.1.1+2
 
 dev_dependencies:
   flutter_test:
